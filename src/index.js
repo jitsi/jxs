@@ -2,6 +2,7 @@
 
 
 import Participant from './Participant';
+import { randomInt } from './util';
 
 const path = require('path');
 const fs = require('fs');
@@ -11,7 +12,7 @@ const {
 } = JSON.parse(fs.readFileSync(path.resolve(process.argv[2])));
 const muc = `conference.${domain}`;
 const focus = `focus.${domain}`;
-const roomPrefix = 'xmppnodeclient-test1';
+const roomPrefix = 'jxs-test-' + Date.now() + randomInt(0, 10000);
 const numberOfRooms = Number(process.argv[3]);
 const numberOfParticipants = Number(process.argv[4]);
 const delay = Number(process.argv[5]) || 0;
