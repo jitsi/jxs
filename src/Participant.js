@@ -285,8 +285,12 @@ export default class Participant extends EventEmitter {
         try {
             await this._xmpp.send(<presence from = { this._jid } to={ this._mucJID } type = 'unavailable'/>);
             await this._xmpp.send(<presence type = "unavailable" />);
-            await this._xmpp.stop();
         } catch (error) {
+            console.error(error);
+        }
+        try {
+            await this._xmpp.stop();
+        } catch(error) {
             console.error(error);
         }
     }
