@@ -58,8 +58,9 @@ export default class Participant extends EventEmitter {
         const { room, muc } = this._config;
         this._mucJID = `${room}@${muc}/${this._roomNick}`;
         try {
-            const response = await this._inviteJicofo();
+            await this._inviteJicofo();
             await this._joinMuc();
+            this._startPing();
         } catch (error) {
             console.error(`${this} error:`, error);
         }
@@ -92,12 +93,10 @@ export default class Participant extends EventEmitter {
             </conference>
         </iq>;
         try {
-            const response = await this._xmpp.iqCaller.request(iq, 30000 );
+            await this._xmpp.iqCaller.request(iq, 30000 );
         } catch (error) {
             console.error(error);
         }
-
-        return response;
     }
 
     async _joinMuc() {
@@ -128,128 +127,133 @@ export default class Participant extends EventEmitter {
         return `Participant ${this._id} from ${this._config.room} room: `;
     }
 
+    _sendSessionAccept(jingle, iq) {
+        const ssrc = {
+            audio: generateSsrc(),
+            video: [
+                generateSsrc(),
+                generateSsrc(),
+                generateSsrc(),
+                generateSsrc(),
+                generateSsrc(),
+                generateSsrc()
+            ]
+        };
+        const sessionAccept = <iq to = { iq.attrs.from } type="set" xmlns="jabber:client">
+            <jingle
+                action="session-accept"
+                initiator = { iq.attrs.from }
+                responder = { this._jid }
+                sid = { jingle.attrs.sid }
+                xmlns="urn:xmpp:jingle:1">
+                <group semantics="BUNDLE" xmlns="urn:xmpp:jingle:apps:grouping:0">
+                    <content name="audio"/>
+                    <content name="video"/>
+                </group>
+                <content creator="responder" name="audio" senders="both">
+                    <description media="audio" ssrc={ ssrc.audio } xmlns="urn:xmpp:jingle:apps:rtp:1">
+                        <payload-type channels="2" clockrate="48000" id="111" name="opus">
+                            <parameter name="minptime" value="10"/>
+                            <parameter name="useinbandfec" value="1"/>
+                            <rtcp-fb type="transport-cc" xmlns="urn:xmpp:jingle:apps:rtp:rtcp-fb:0"/>
+                        </payload-type>
+                        <payload-type channels="1" clockrate="16000" id="103" name="ISAC"/>
+                        <payload-type channels="1" clockrate="32000" id="104" name="ISAC"/>
+                        <payload-type channels="1" clockrate="8000" id="126" name="telephone-event"/>
+                        <source ssrc={ ssrc.audio } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
+                            <parameter name="cname" value={ `5aE0l105Q2A6Je9h-${this._id}` } />
+                            <parameter name="msid" value={ `3cfa92ee-96d5-447d-a481-6fa3e2e1ccb5-${this._id} 29e884f8-ab8a-466d-8c53-9b8da2d14ddb-${this._id}` }/>
+                            <parameter name="mslabel" value={ `3cfa92ee-96d5-447d-a481-6fa3e2e1ccb5-${this._id}` }/>
+                            <parameter name="label" value={ `29e884f8-ab8a-466d-8c53-9b8da2d14ddb-${this._id}` }/>
+                        </source>
+                        <rtcp-mux/>
+                        <rtp-hdrext id="1" uri="urn:ietf:params:rtp-hdrext:ssrc-audio-level" xmlns="urn:xmpp:jingle:apps:rtp:rtp-hdrext:0"/>
+                        <rtp-hdrext id="5" uri="http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01" xmlns="urn:xmpp:jingle:apps:rtp:rtp-hdrext:0"/>
+                    </description>
+                    <transport pwd="mbXdhJhxCTpxn72IN15DfPPy" ufrag="ax9g" xmlns="urn:xmpp:jingle:transports:ice-udp:1">
+                        <fingerprint hash="sha-256" setup="passive" xmlns="urn:xmpp:jingle:apps:dtls:0">9F:16:C2:FF:E7:94:E4:70:83:FF:EE:F3:DA:92:C0:B2:31:97:50:B6:E4:EC:39:B0:00:30:89:94:2D:23:16:ED</fingerprint>
+                        <candidate component="1" foundation="1078452949" generation="0" id="2f0wqighpf" ip="2605:a601:ab75:ca00:20ea:1102:2d66:aee" network="1" port="56613" priority="2122262783" protocol="udp" type="host"/>
+                    </transport>
+                </content>
+                <content creator="responder" name="video" senders="both">
+                    <description media="video" ssrc={ ssrc.video[0] } xmlns="urn:xmpp:jingle:apps:rtp:1">
+                        <payload-type channels="1" clockrate="90000" id="100" name="VP8">
+                            <rtcp-fb type="goog-remb" xmlns="urn:xmpp:jingle:apps:rtp:rtcp-fb:0"/>
+                            <rtcp-fb type="transport-cc" xmlns="urn:xmpp:jingle:apps:rtp:rtcp-fb:0"/>
+                            <rtcp-fb subtype="fir" type="ccm" xmlns="urn:xmpp:jingle:apps:rtp:rtcp-fb:0"/>
+                            <rtcp-fb type="nack" xmlns="urn:xmpp:jingle:apps:rtp:rtcp-fb:0"/>
+                            <rtcp-fb subtype="pli" type="nack" xmlns="urn:xmpp:jingle:apps:rtp:rtcp-fb:0"/>
+                        </payload-type>
+                        <payload-type channels="1" clockrate="90000" id="96" name="rtx">
+                            <parameter name="apt" value="100"/>
+                        </payload-type>
+                        <source ssrc={ ssrc.video[0] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
+                            <parameter name="cname" value={`5aE0l105Q2A6Je9h-${this._id}`}/>
+                            <parameter name="msid" value={`58aa4d3c-20a4-4326-afb7-6a804e72a1ab-${this._id} c0dbb506-3a8e-49fc-a541-b7f4d01c2ef9-${this._id}`}/>
+                        </source>
+                        <source ssrc={ ssrc.video[1] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
+                            <parameter name="cname" value={ `5aE0l105Q2A6Je9h-${this._id}` }/>
+                            <parameter name="msid" value={ `58aa4d3c-20a4-4326-afb7-6a804e72a1ab-${this._id} c0dbb506-3a8e-49fc-a541-b7f4d01c2ef9-${this._id}` }/>
+                        </source>
+                        <source ssrc={ ssrc.video[2] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
+                            <parameter name="cname" value={ `5aE0l105Q2A6Je9h-${this._id}` }/>
+                            <parameter name="msid" value={ `58aa4d3c-20a4-4326-afb7-6a804e72a1ab-${this._id} c0dbb506-3a8e-49fc-a541-b7f4d01c2ef9-${this._id}` }/>
+                        </source>
+                        <source ssrc={ ssrc.video[3] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
+                            <parameter name="cname" value={ `5aE0l105Q2A6Je9h-${this._id}` }/>
+                            <parameter name="msid" value={ `58aa4d3c-20a4-4326-afb7-6a804e72a1ab-${this._id} c0dbb506-3a8e-49fc-a541-b7f4d01c2ef9-${this._id}` }/>
+                        </source>
+                        <source ssrc={ ssrc.video[4] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
+                            <parameter name="cname" value={ `5aE0l105Q2A6Je9h-${this._id}` }/>
+                            <parameter name="msid" value={ `58aa4d3c-20a4-4326-afb7-6a804e72a1ab-${this._id} c0dbb506-3a8e-49fc-a541-b7f4d01c2ef9-${this._id}` }/>
+                        </source>
+                        <source ssrc={ ssrc.video[5] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
+                            <parameter name="cname" value={ `5aE0l105Q2A6Je9h-${this._id}` }/>
+                            <parameter name="msid" value={ `58aa4d3c-20a4-4326-afb7-6a804e72a1ab-${this._id} c0dbb506-3a8e-49fc-a541-b7f4d01c2ef9-${this._id}` }/>
+                        </source>
+                        <ssrc-group semantics="FID" xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
+                            <source ssrc={ ssrc.video[0] }/>
+                            <source ssrc={ ssrc.video[1] }/>
+                            </ssrc-group>
+                        <ssrc-group semantics="FID" xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
+                            <source ssrc={ ssrc.video[2] }/>
+                            <source ssrc={ ssrc.video[4] }/>
+                        </ssrc-group>
+                        <ssrc-group semantics="FID" xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
+                            <source ssrc={ ssrc.video[3] }/>
+                            <source ssrc={ ssrc.video[5] }/>
+                        </ssrc-group>
+                        <ssrc-group semantics="SIM" xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
+                            <source ssrc={ ssrc.video[0] }/>
+                            <source ssrc={ ssrc.video[2] }/>
+                            <source ssrc={ ssrc.video[3] }/>
+                        </ssrc-group>
+                        <rtcp-mux/>
+                        <rtp-hdrext id="3" uri="http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time" xmlns="urn:xmpp:jingle:apps:rtp:rtp-hdrext:0"/>
+                        <rtp-hdrext id="5" uri="http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01" xmlns="urn:xmpp:jingle:apps:rtp:rtp-hdrext:0"/>
+                    </description>
+                    <transport pwd="mbXdhJhxCTpxn72IN15DfPPy" ufrag="ax9g" xmlns="urn:xmpp:jingle:transports:ice-udp:1">
+                        <fingerprint hash="sha-256" setup="passive" xmlns="urn:xmpp:jingle:apps:dtls:0">9F:16:C2:FF:E7:94:E4:70:83:FF:EE:F3:DA:92:C0:B2:31:97:50:B6:E4:EC:39:B0:00:30:89:94:2D:23:16:ED</fingerprint>
+                    </transport>
+                </content>
+            </jingle>
+        </iq>;
+
+        try{
+            console.log(`${this} sends session accept`);
+            this._xmpp.iqCaller.request(sessionAccept, 30000);
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
     _onJingle(ctx) {
         const { element, stanza } = ctx;
         switch(element.attrs.action) {
             case 'session-initiate':
                 console.log(`${this} received session initiate`);
                 setTimeout(async () => {
-                    try{
-                        const ssrc = {
-                            audio: generateSsrc(),
-                            video: [
-                                generateSsrc(),
-                                generateSsrc(),
-                                generateSsrc(),
-                                generateSsrc(),
-                                generateSsrc(),
-                                generateSsrc()
-                            ]
-                        }
-                        console.log(`${this} sends session accept`);
-                        const response = await this._xmpp.iqCaller.request(
-                            <iq to = { stanza.attrs.from } type="set" xmlns="jabber:client">
-                                <jingle
-                                    action="session-accept"
-                                    initiator = { stanza.attrs.from }
-                                    responder = { this._jid }
-                                    sid = { element.attrs.sid }
-                                    xmlns="urn:xmpp:jingle:1">
-                                    <group semantics="BUNDLE" xmlns="urn:xmpp:jingle:apps:grouping:0">
-                                        <content name="audio"/>
-                                        <content name="video"/>
-                                    </group>
-                                    <content creator="responder" name="audio" senders="both">
-                                        <description media="audio" ssrc={ ssrc.audio } xmlns="urn:xmpp:jingle:apps:rtp:1">
-                                            <payload-type channels="2" clockrate="48000" id="111" name="opus">
-                                                <parameter name="minptime" value="10"/>
-                                                <parameter name="useinbandfec" value="1"/>
-                                                <rtcp-fb type="transport-cc" xmlns="urn:xmpp:jingle:apps:rtp:rtcp-fb:0"/>
-                                            </payload-type>
-                                            <payload-type channels="1" clockrate="16000" id="103" name="ISAC"/>
-                                            <payload-type channels="1" clockrate="32000" id="104" name="ISAC"/>
-                                            <payload-type channels="1" clockrate="8000" id="126" name="telephone-event"/>
-                                            <source ssrc={ ssrc.audio } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
-                                                <parameter name="cname" value={ `5aE0l105Q2A6Je9h-${this._id}` } />
-                                                <parameter name="msid" value={ `3cfa92ee-96d5-447d-a481-6fa3e2e1ccb5-${this._id} 29e884f8-ab8a-466d-8c53-9b8da2d14ddb-${this._id}` }/>
-                                                <parameter name="mslabel" value={ `3cfa92ee-96d5-447d-a481-6fa3e2e1ccb5-${this._id}` }/>
-                                                <parameter name="label" value={ `29e884f8-ab8a-466d-8c53-9b8da2d14ddb-${this._id}` }/>
-                                            </source>
-                                            <rtcp-mux/>
-                                            <rtp-hdrext id="1" uri="urn:ietf:params:rtp-hdrext:ssrc-audio-level" xmlns="urn:xmpp:jingle:apps:rtp:rtp-hdrext:0"/>
-                                            <rtp-hdrext id="5" uri="http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01" xmlns="urn:xmpp:jingle:apps:rtp:rtp-hdrext:0"/>
-                                        </description>
-                                        <transport pwd="mbXdhJhxCTpxn72IN15DfPPy" ufrag="ax9g" xmlns="urn:xmpp:jingle:transports:ice-udp:1">
-                                            <fingerprint hash="sha-256" setup="passive" xmlns="urn:xmpp:jingle:apps:dtls:0">9F:16:C2:FF:E7:94:E4:70:83:FF:EE:F3:DA:92:C0:B2:31:97:50:B6:E4:EC:39:B0:00:30:89:94:2D:23:16:ED</fingerprint>
-                                            <candidate component="1" foundation="1078452949" generation="0" id="2f0wqighpf" ip="2605:a601:ab75:ca00:20ea:1102:2d66:aee" network="1" port="56613" priority="2122262783" protocol="udp" type="host"/>
-                                        </transport>
-                                    </content>
-                                    <content creator="responder" name="video" senders="both">
-                                        <description media="video" ssrc={ ssrc.video[0] } xmlns="urn:xmpp:jingle:apps:rtp:1">
-                                            <payload-type channels="1" clockrate="90000" id="100" name="VP8">
-                                                <rtcp-fb type="goog-remb" xmlns="urn:xmpp:jingle:apps:rtp:rtcp-fb:0"/>
-                                                <rtcp-fb type="transport-cc" xmlns="urn:xmpp:jingle:apps:rtp:rtcp-fb:0"/>
-                                                <rtcp-fb subtype="fir" type="ccm" xmlns="urn:xmpp:jingle:apps:rtp:rtcp-fb:0"/>
-                                                <rtcp-fb type="nack" xmlns="urn:xmpp:jingle:apps:rtp:rtcp-fb:0"/>
-                                                <rtcp-fb subtype="pli" type="nack" xmlns="urn:xmpp:jingle:apps:rtp:rtcp-fb:0"/>
-                                            </payload-type>
-                                            <payload-type channels="1" clockrate="90000" id="96" name="rtx">
-                                                <parameter name="apt" value="100"/>
-                                            </payload-type>
-                                            <source ssrc={ ssrc.video[0] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
-                                                <parameter name="cname" value={`5aE0l105Q2A6Je9h-${this._id}`}/>
-                                                <parameter name="msid" value={`58aa4d3c-20a4-4326-afb7-6a804e72a1ab-${this._id} c0dbb506-3a8e-49fc-a541-b7f4d01c2ef9-${this._id}`}/>
-                                            </source>
-                                            <source ssrc={ ssrc.video[1] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
-                                                <parameter name="cname" value={ `5aE0l105Q2A6Je9h-${this._id}` }/>
-                                                <parameter name="msid" value={ `58aa4d3c-20a4-4326-afb7-6a804e72a1ab-${this._id} c0dbb506-3a8e-49fc-a541-b7f4d01c2ef9-${this._id}` }/>
-                                            </source>
-                                            <source ssrc={ ssrc.video[2] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
-                                                <parameter name="cname" value={ `5aE0l105Q2A6Je9h-${this._id}` }/>
-                                                <parameter name="msid" value={ `58aa4d3c-20a4-4326-afb7-6a804e72a1ab-${this._id} c0dbb506-3a8e-49fc-a541-b7f4d01c2ef9-${this._id}` }/>
-                                            </source>
-                                            <source ssrc={ ssrc.video[3] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
-                                                <parameter name="cname" value={ `5aE0l105Q2A6Je9h-${this._id}` }/>
-                                                <parameter name="msid" value={ `58aa4d3c-20a4-4326-afb7-6a804e72a1ab-${this._id} c0dbb506-3a8e-49fc-a541-b7f4d01c2ef9-${this._id}` }/>
-                                            </source>
-                                            <source ssrc={ ssrc.video[4] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
-                                                <parameter name="cname" value={ `5aE0l105Q2A6Je9h-${this._id}` }/>
-                                                <parameter name="msid" value={ `58aa4d3c-20a4-4326-afb7-6a804e72a1ab-${this._id} c0dbb506-3a8e-49fc-a541-b7f4d01c2ef9-${this._id}` }/>
-                                            </source>
-                                            <source ssrc={ ssrc.video[5] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
-                                                <parameter name="cname" value={ `5aE0l105Q2A6Je9h-${this._id}` }/>
-                                                <parameter name="msid" value={ `58aa4d3c-20a4-4326-afb7-6a804e72a1ab-${this._id} c0dbb506-3a8e-49fc-a541-b7f4d01c2ef9-${this._id}` }/>
-                                            </source>
-                                            <ssrc-group semantics="FID" xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
-                                                <source ssrc={ ssrc.video[0] }/>
-                                                <source ssrc={ ssrc.video[1] }/>
-                                                </ssrc-group>
-                                            <ssrc-group semantics="FID" xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
-                                                <source ssrc={ ssrc.video[2] }/>
-                                                <source ssrc={ ssrc.video[4] }/>
-                                            </ssrc-group>
-                                            <ssrc-group semantics="FID" xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
-                                                <source ssrc={ ssrc.video[3] }/>
-                                                <source ssrc={ ssrc.video[5] }/>
-                                            </ssrc-group>
-                                            <ssrc-group semantics="SIM" xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
-                                                <source ssrc={ ssrc.video[0] }/>
-                                                <source ssrc={ ssrc.video[2] }/>
-                                                <source ssrc={ ssrc.video[3] }/>
-                                            </ssrc-group>
-                                            <rtcp-mux/>
-                                            <rtp-hdrext id="3" uri="http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time" xmlns="urn:xmpp:jingle:apps:rtp:rtp-hdrext:0"/>
-                                            <rtp-hdrext id="5" uri="http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01" xmlns="urn:xmpp:jingle:apps:rtp:rtp-hdrext:0"/>
-                                        </description>
-                                        <transport pwd="mbXdhJhxCTpxn72IN15DfPPy" ufrag="ax9g" xmlns="urn:xmpp:jingle:transports:ice-udp:1">
-                                            <fingerprint hash="sha-256" setup="passive" xmlns="urn:xmpp:jingle:apps:dtls:0">9F:16:C2:FF:E7:94:E4:70:83:FF:EE:F3:DA:92:C0:B2:31:97:50:B6:E4:EC:39:B0:00:30:89:94:2D:23:16:ED</fingerprint>
-                                        </transport>
-                                    </content>
-                                </jingle>
-                            </iq>, 30000);
-                    } catch (error) {
-                        console.error(error);
-                    }
+                    this._sendSessionAccept(element, stanza);
                 }, 10);
                 return true;
             break;
@@ -259,7 +263,6 @@ export default class Participant extends EventEmitter {
 
     join() {
         this._xmpp.start().catch(this._onError);
-        this._startPing();
     }
 
     _startPing() {
