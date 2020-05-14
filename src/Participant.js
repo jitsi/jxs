@@ -161,10 +161,8 @@ export default class Participant extends EventEmitter {
                         <payload-type channels="1" clockrate="32000" id="104" name="ISAC"/>
                         <payload-type channels="1" clockrate="8000" id="126" name="telephone-event"/>
                         <source ssrc={ ssrc.audio } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
-                            <parameter name="cname" value={ `5aE0l105Q2A6Je9h-${this._id}` } />
-                            <parameter name="msid" value={ `3cfa92ee-96d5-447d-a481-6fa3e2e1ccb5-${this._id} 29e884f8-ab8a-466d-8c53-9b8da2d14ddb-${this._id}` }/>
-                            <parameter name="mslabel" value={ `3cfa92ee-96d5-447d-a481-6fa3e2e1ccb5-${this._id}` }/>
-                            <parameter name="label" value={ `29e884f8-ab8a-466d-8c53-9b8da2d14ddb-${this._id}` }/>
+                            <parameter name="cname" value={ `cname-${this._id}` } />
+                            <parameter name="msid" value={ `audio-stream-${this._id} audio-track-${this._id}` }/>
                         </source>
                         <rtcp-mux/>
                         <rtp-hdrext id="1" uri="urn:ietf:params:rtp-hdrext:ssrc-audio-level" xmlns="urn:xmpp:jingle:apps:rtp:rtp-hdrext:0"/>
@@ -188,28 +186,28 @@ export default class Participant extends EventEmitter {
                             <parameter name="apt" value="100"/>
                         </payload-type>
                         <source ssrc={ ssrc.video[0] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
-                            <parameter name="cname" value={`5aE0l105Q2A6Je9h-${this._id}`}/>
-                            <parameter name="msid" value={`58aa4d3c-20a4-4326-afb7-6a804e72a1ab-${this._id} c0dbb506-3a8e-49fc-a541-b7f4d01c2ef9-${this._id}`}/>
+                            <parameter name="cname" value={`cname-${this._id}`}/>
+                            <parameter name="msid" value={`video-stream-${this._id} video-track-${this._id}`}/>
                         </source>
                         <source ssrc={ ssrc.video[1] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
-                            <parameter name="cname" value={ `5aE0l105Q2A6Je9h-${this._id}` }/>
-                            <parameter name="msid" value={ `58aa4d3c-20a4-4326-afb7-6a804e72a1ab-${this._id} c0dbb506-3a8e-49fc-a541-b7f4d01c2ef9-${this._id}` }/>
+                            <parameter name="cname" value={ `cname-${this._id}` }/>
+                            <parameter name="msid" value={ `video-stream-${this._id} video-track-${this._id}` }/>
                         </source>
                         <source ssrc={ ssrc.video[2] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
-                            <parameter name="cname" value={ `5aE0l105Q2A6Je9h-${this._id}` }/>
-                            <parameter name="msid" value={ `58aa4d3c-20a4-4326-afb7-6a804e72a1ab-${this._id} c0dbb506-3a8e-49fc-a541-b7f4d01c2ef9-${this._id}` }/>
+                            <parameter name="cname" value={ `cname-${this._id}` }/>
+                            <parameter name="msid" value={ `video-stream-${this._id} video-track-${this._id}` }/>
                         </source>
                         <source ssrc={ ssrc.video[3] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
-                            <parameter name="cname" value={ `5aE0l105Q2A6Je9h-${this._id}` }/>
-                            <parameter name="msid" value={ `58aa4d3c-20a4-4326-afb7-6a804e72a1ab-${this._id} c0dbb506-3a8e-49fc-a541-b7f4d01c2ef9-${this._id}` }/>
+                            <parameter name="cname" value={ `cname-${this._id}` }/>
+                            <parameter name="msid" value={ `video-stream-${this._id} video-track-${this._id}` }/>
                         </source>
                         <source ssrc={ ssrc.video[4] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
-                            <parameter name="cname" value={ `5aE0l105Q2A6Je9h-${this._id}` }/>
-                            <parameter name="msid" value={ `58aa4d3c-20a4-4326-afb7-6a804e72a1ab-${this._id} c0dbb506-3a8e-49fc-a541-b7f4d01c2ef9-${this._id}` }/>
+                            <parameter name="cname" value={ `cname-${this._id}` }/>
+                            <parameter name="msid" value={ `video-stream-${this._id} video-track-${this._id}` }/>
                         </source>
                         <source ssrc={ ssrc.video[5] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
-                            <parameter name="cname" value={ `5aE0l105Q2A6Je9h-${this._id}` }/>
-                            <parameter name="msid" value={ `58aa4d3c-20a4-4326-afb7-6a804e72a1ab-${this._id} c0dbb506-3a8e-49fc-a541-b7f4d01c2ef9-${this._id}` }/>
+                            <parameter name="cname" value={ `cname-${this._id}` }/>
+                            <parameter name="msid" value={ `video-stream-${this._id} video-track-${this._id}` }/>
                         </source>
                         <ssrc-group semantics="FID" xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
                             <source ssrc={ ssrc.video[0] }/>
