@@ -256,6 +256,7 @@ export default class Participant extends EventEmitter {
                 return true;
             break;
             default:
+                return true;
         }
     }
 
