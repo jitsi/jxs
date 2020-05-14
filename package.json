@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Jitsi XMPP Stress test",
   "main": "src/index.js",
+  "engines": {
+    "node": ">=10"
+  },
   "dependencies": {
     "@xmpp/client": "^0.11.1",
     "@xmpp/debug": "^0.11.0"
