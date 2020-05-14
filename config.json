@@ -1,6 +1,4 @@
 {
     "service": "wss://chaos.jitsi.net/xmpp-websocket",
-    "domain": "jitsi.net",
-    "muc": "conference.jitsi.net",
-    "focus": "focus.jitsi.net"
+    "domain": "jitsi.net"
 }
