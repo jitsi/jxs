@@ -1,4 +1,4 @@
 {
-    "service": "wss://chaos.jitsi.net/xmpp-websocket",
-    "domain": "jitsi.net"
+    "service": "wss://example.com/xmpp-websocket",
+    "domain": "example.com"
 }
