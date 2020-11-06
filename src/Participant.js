@@ -266,14 +266,21 @@ export default class Participant extends EventEmitter {
 
     _startPing() {
         this._pingInterval = setInterval(() => {
-            try {
-                this._xmpp.iqCaller.request(<iq  to={this._config.domain} type="get" xmlns="jabber:client">
-                    <ping xmlns="urn:xmpp:ping"/>
-                </iq>, 30000);
-            } catch(error) {
-                console.error(error);
-            }
+            this._sendPing();
         }, 10000);
+    }
+
+    _sendPing() {
+        try {
+            this._xmpp.iqCaller.request(<iq  to={this._config.domain} type="get" xmlns="jabber:client">
+                <ping xmlns="urn:xmpp:ping"/>
+            </iq>, 30000).then(() => {
+                // count the ping responses for the stream management so we can ack them
+                this._xmpp.streamManagement.inbound += 1;
+            });
+        } catch(error) {
+            console.error(error);
+        }
     }
 
     _stopPing() {
