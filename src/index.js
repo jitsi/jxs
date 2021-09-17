@@ -1,6 +1,3 @@
-
-
-
 import Participant from './Participant';
 import { randomInt } from './util';
 
@@ -26,6 +23,35 @@ if (!numberOfParticipants || isNaN(numberOfParticipants)) {
 }
 
 const participants = {};
+const joinRates = {};
+const joinAttemptRates = {};
+
+let numberOfJoins = 0;
+const onJoined = function () {
+    const currentSecond = new Date().getTime()/1000 | 0;
+    numberOfJoins++;
+
+    if (!joinRates[currentSecond]) {
+        joinRates[currentSecond] = 1;
+    } else {
+        joinRates[currentSecond]++;
+    }
+
+    if (numberOfJoins == numberOfParticipants) {
+        // this is the last one
+        console.log('joinAttemptRates:', joinAttemptRates);
+        console.log('joinRate:', joinRates);
+    }
+};
+
+let numberOfOffline = 0;
+const onOffline = function () {
+    numberOfOffline++;
+
+    if (numberOfOffline == numberOfParticipants) {
+        process.exit(0);
+    }
+};
 
 for (let j = 0; j < numberOfRooms; j++) {
     const roomName = `${roomPrefix}-${j}`;
@@ -41,11 +67,23 @@ for (let j = 0; j < numberOfRooms; j++) {
             focus,
             muc
         });
+        participant.on('joined', onJoined);
+        participant.on('offline', onOffline);
+
         participants[roomName].push(participant);
         if (!delay) {
             participant.join();
         } else {
-            setTimeout(() => participant.join(), i * delay);
+            setTimeout(() => {
+                const currentSecond = new Date().getTime()/1000 | 0;
+                if (!joinAttemptRates[currentSecond]) {
+                    joinAttemptRates[currentSecond] = 1;
+                } else {
+                    joinAttemptRates[currentSecond]++;
+                }
+
+                participant.join();
+            }, i * delay);
         }
     }
 }
