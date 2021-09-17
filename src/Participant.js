@@ -68,6 +68,14 @@ export default class Participant extends EventEmitter {
     }
 
     _onStanza(stanza) {
+        if (stanza.is("presence")) {
+            const x = stanza.getChild("x");
+            if (x && x.getChildren("status").find(
+                    (status) => status.attrs.code === "110") !== undefined) {
+                this.emit('joined', stanza);
+            }
+        }
+
         this.emit('stanza', stanza);
     }
 
