@@ -49,8 +49,14 @@ for (let j = 0; j < numberOfRooms; j++) {
         }
     }
 }
+let cleanedUp = false;
 
 function cleanup() {
+    if (cleanedUp) {
+        return;
+    }
+    cleanedUp = true;
+
     for (const room in participants) {
         participants[room].every(p => p.disconnect());
     }
