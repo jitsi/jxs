@@ -123,6 +123,40 @@ export default class Participant extends EventEmitter {
         }
     }
 
+    async _sendAudioMute(mute) {
+        console.log(`${this} send mute ${mute}!`);
+        try {
+            await this._xmpp.send(<presence
+                to = { this._mucJID }
+                xmlns="jabber:client">
+                    <stats-id>Adeline-2mY</stats-id>
+                    <region id="us-east-1" xmlns="http://jitsi.org/jitsi-meet"/>
+                    <c hash="sha-1" node="http://jitsi.org/jitsimeet" ver="cvjWXufsg4xT62Ec2mlATkFZ9lk=" xmlns="http://jabber.org/protocol/caps"/>
+                    <jitsi_participant_region>us-east-1</jitsi_participant_region>
+                    <avatar-id>e8b7ee7bbac3a53f14a711b538526bf3</avatar-id>
+                    <nick xmlns="http://jabber.org/protocol/nick"/>
+                    <audiomuted xmlns="http://jitsi.org/jitmeet/audio">{ mute }</audiomuted>
+                    <videoType xmlns="http://jitsi.org/jitmeet/video">camera</videoType>
+                    <videomuted xmlns="http://jitsi.org/jitmeet/video">false</videomuted>
+                </presence>);
+        } catch (error) {
+            console.error()
+        }
+    }
+    async _sendMessage(txt) {
+        console.log(`${this} send msg ${txt}!`);
+        try {
+            await this._xmpp.send(<message
+                to = { this._mucJID }
+                type="groupchat"
+                xmlns="jabber:client">
+                <body>{txt}</body>
+                </message>);
+        } catch (error) {
+            console.error()
+        }
+    }
+
     toString() {
         return `Participant ${this._id} from ${this._config.room} room: `;
     }
