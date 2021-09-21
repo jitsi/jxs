@@ -68,7 +68,7 @@ export default class Participant extends EventEmitter {
     }
 
     _onStanza(stanza) {
-        if (stanza.is("presence")) {
+        if (stanza.is("presence") && stanza.attrs.type !== 'unavailable') {
             const x = stanza.getChild("x");
             if (x && x.getChildren("status").find(
                     (status) => status.attrs.code === "110") !== undefined) {
