@@ -31,13 +31,15 @@ const onJoined = function () {
     const currentSecond = new Date().getTime()/1000 | 0;
     numberOfJoins++;
 
+    console.log('joined:' + numberOfJoins);
+
     if (!joinRates[currentSecond]) {
         joinRates[currentSecond] = 1;
     } else {
         joinRates[currentSecond]++;
     }
 
-    if (numberOfJoins == numberOfParticipants) {
+    if (numberOfJoins === numberOfParticipants) {
         // this is the last one
         console.log('joinAttemptRates:', joinAttemptRates);
         console.log('joinRate:', joinRates);
@@ -48,7 +50,7 @@ let numberOfOffline = 0;
 const onOffline = function () {
     numberOfOffline++;
 
-    if (numberOfOffline == numberOfParticipants) {
+    if (numberOfOffline === numberOfParticipants) {
         process.exit(0);
     }
 };
