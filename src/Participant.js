@@ -126,10 +126,10 @@ export default class Participant extends EventEmitter {
                     <x xmlns="http://jabber.org/protocol/muc"/>
                     <stats-id>participant-{this._id}</stats-id>
                     <region id="us-east-1" xmlns="http://jitsi.org/jitsi-meet"/>
-                    <c hash="sha-1" node="http://jitsi.org/jitsimeet" ver="cvjWXufsg4xT62Ec2mlATkFZ9lk=" xmlns="http://jabber.org/protocol/caps"/>
+                    <c xmlns="http://jabber.org/protocol/caps" hash="sha-1" node="https://jitsi.org/jitsi-meet" ver="145G7HAtbAUYSkQzy4VtpQNqU3o="/>
                     <jitsi_participant_region>us-east-1</jitsi_participant_region>
                     <avatar-id>e8b7ee7bbac3a53f14a711b538526bf3</avatar-id>
-                    <nick xmlns="http://jabber.org/protocol/nick"/>
+                    <nick xmlns="http://jabber.org/protocol/nick">this._id</nick>
                     <audiomuted xmlns="http://jitsi.org/jitmeet/audio">false</audiomuted>
                     <videoType xmlns="http://jitsi.org/jitmeet/video">camera</videoType>
                     <videomuted xmlns="http://jitsi.org/jitmeet/video">false</videomuted>
