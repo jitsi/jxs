@@ -9,7 +9,10 @@
   },
   "dependencies": {
     "@xmpp/client": "^0.13.1",
-    "@xmpp/debug": "^0.13.0"
+    "@xmpp/debug": "^0.13.0",
+    "bufferutil": "^4.0.8",
+    "utf-8-validate": "^6.0.3",
+    "ws": "^8.15.1"
   },
   "devDependencies": {
     "@babel/core": "^7.23.2",
