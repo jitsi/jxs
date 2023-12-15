@@ -28,7 +28,7 @@ You must specify the path to a configuration file in JSON format as the first co
  -- `roomPrefix` - optional, the prefix for the names of the rooms to join. Defaults to `jxs-test-${random}`
  -- `numberOfRooms` - optional, number of rooms to join. Defaults to 1, can be overriden by a command line argument.
  -- `numberOfParticipants` - optional, the number of participants in each room. Defaults to 1, can be overriden by a command line argument.
- -- `delay` - optional, the number of milliseconds to wait between participants in a room (independent for each room). Defaults to 100, can be overriden by a command line argument
+ -- `delay` - optional, the number of milliseconds to wait between participants in a room (independent for each room). Defaults to 0.
  -- `enableDebug` - optional, enable debug logging. Defaults to false.
  -- `enableXmppLog` - optional, enables logging XMPP traffic. Defaults to false.
  -- `conferenceRequestTarget` - optional, the target to send conference-request to. If this starts with 'http://' or 'https://' the conference request is sent over HTTP (prior to logging in to XMPP). Otherwise, it's sent over XMPP. Defaults to `focus.${domain}` (XMPP).
