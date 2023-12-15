@@ -36,10 +36,11 @@ log(`Running with config: ${JSON.stringify(config,null, 2)}`);
 const rooms = {};
 
 let numberOfJoins = 0;
+const startTime = new Date();
 const onJoined = function () {
     numberOfJoins++;
     if (numberOfJoins == config.numberOfParticipants * config.numberOfRooms) {
-        log('All joined.');
+        log(`All joined, took ${(new Date() - startTime)/1000} seconds.`);
         if (config.duration) {
             log(`Setting timeout in ${config.duration} seconds.`)
             setTimeout(cleanup, config.duration * 1000);
