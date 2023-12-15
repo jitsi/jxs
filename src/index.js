@@ -64,13 +64,9 @@ for (let j = 0; j < config.numberOfRooms; j++) {
         participant.on('offline', onOffline);
 
         rooms[roomName].push(participant);
-        if (!config.delay) {
+        setTimeout(() => {
             participant.join();
-        } else {
-            setTimeout(() => {
-                participant.join();
-            }, i * config.delay);
-        }
+        }, i * config.delay);
     }
 }
 let cleanedUp = false;

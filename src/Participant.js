@@ -2,6 +2,7 @@
 import EventEmitter from 'events';
 import { client, xml } from '@xmpp/client';
 import debug from '@xmpp/debug';
+import fetch from 'node-fetch';
 import { generateSsrc, log } from './util'
 
 export default class Participant extends EventEmitter {
@@ -56,7 +57,9 @@ export default class Participant extends EventEmitter {
         const { room, muc, conferenceRequestTarget } = this._config;
         this._mucJID = `${room}@${muc}/${this._roomNick}`;
         try {
-            await this._sendConferenceRequestXmpp(conferenceRequestTarget);
+            if (!this._getConferenceRequestUrl()) {
+                await this._sendConferenceRequestXmpp(conferenceRequestTarget);
+            }
             await this._joinMuc();
             this._startPing();
         } catch (error) {
@@ -79,7 +82,7 @@ export default class Participant extends EventEmitter {
     }
 
     async _sendConferenceRequestXmpp(toJid) {
-        this._debug('sending conference-request');
+        this._debug(`sending conference-request over XMPP to ${toJid}`);
         const { room, muc } = this._config;
         const iq = <iq to = { toJid } type="set" xmlns="jabber:client">
             <conference machine-uid = { this._machineID }
@@ -92,6 +95,25 @@ export default class Participant extends EventEmitter {
         } catch (error) {
             log(`${this} Error inviting jicofo:`, error)
         }
+    }
+
+    async _sendConferenceRequestHttp(url) {
+        const { room, muc } = this._config;
+        const fullRoom = `${room}@${muc}`;
+        this._debug(`${this} sending conference-request to ${url}, fullRoom=${fullRoom}`);
+
+        await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+             'machineUid': this._machineID,
+             'room': fullRoom
+            })
+        })
+           .then(response => response.json())
+           .then(response => this._debug("Response: "+JSON.stringify(response)))
     }
 
     async _joinMuc() {
@@ -294,8 +316,21 @@ export default class Participant extends EventEmitter {
         }
     }
 
-    join() {
+    async join() {
+        const url = this._getConferenceRequestUrl();
+        if (url) {
+            await this._sendConferenceRequestHttp(url);
+        }
+
         this._xmpp.start().catch(this._onError);
+    }
+
+    _getConferenceRequestUrl() {
+        const { conferenceRequestTarget, room } = this._config;
+
+        if (conferenceRequestTarget.startsWith('http://') || conferenceRequestTarget.startsWith('https://')) {
+            return `${conferenceRequestTarget}?room=${room}`;
+        }
     }
 
     _startPing() {
