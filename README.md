@@ -32,6 +32,7 @@ You must specify the path to a configuration file in JSON format as the first co
  -- `enableDebug` - optional, enable debug logging. Defaults to false.
  -- `enableXmppLog` - optional, enables logging XMPP traffic. Defaults to false.
  -- `conferenceRequestTarget` - optional, the target to send conference-request to. If this starts with 'http://' or 'https://' the conference request is sent over HTTP (prior to logging in to XMPP). Otherwise, it's sent over XMPP. Defaults to `focus.${domain}` (XMPP).
+ -- `duration` - optional, number of second to wait before timing out. Defaults to no automatic timeout.
 
 Note that command line arguments override the values in the config file.
 

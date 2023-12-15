@@ -40,6 +40,10 @@ const onJoined = function () {
     numberOfJoins++;
     if (numberOfJoins == config.numberOfParticipants * config.numberOfRooms) {
         log('All joined.');
+        if (config.duration) {
+            log(`Setting timeout in ${config.duration} seconds.`)
+            setTimeout(cleanup, config.duration * 1000);
+        }
     }
 }
 let numberOfOffline = 0;
