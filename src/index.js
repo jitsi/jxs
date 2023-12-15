@@ -24,13 +24,13 @@ if (!config.domain) {
 
 config.service = config.service || `wss://${config.domain}/xmpp-websocket`;
 config.muc = config.muc || `conference.${config.domain}`;
-config.focus = config.focus || `focus.${config.domain}`;
 config.roomPrefix = config.roomPrefix || 'jxs-test-' + randomInt(0, 10000);
 config.numberOfRooms = Number(process.argv[3]) || config.numberOfRooms || 1;
 config.numberOfParticipants = Number(process.argv[4]) || config.numberOfParticipants || 2;
 config.delay = Number(process.argv[5]) || config.delay || 100;
 config.enableDebug = config.enableDebug || false;
 config.enableXmppLog = config.enableXmppLog || false;
+config.conferenceRequestTarget = config.conferenceRequestTarget || `focus.${config.domain}`;
 log(`Running with config: ${JSON.stringify(config,null, 2)}`);
 
 const rooms = {};

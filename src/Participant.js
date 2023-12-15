@@ -53,10 +53,10 @@ export default class Participant extends EventEmitter {
         this._jid = address;
         this._machineID = this._jid.local;
         this._roomNick = this._jid.local.slice(0, 8);
-        const { room, muc } = this._config;
+        const { room, muc, conferenceRequestTarget } = this._config;
         this._mucJID = `${room}@${muc}/${this._roomNick}`;
         try {
-            await this._inviteJicofo();
+            await this._sendConferenceRequestXmpp(conferenceRequestTarget);
             await this._joinMuc();
             this._startPing();
         } catch (error) {
@@ -78,25 +78,13 @@ export default class Participant extends EventEmitter {
         this.emit('stanza', stanza);
     }
 
-    async _inviteJicofo() {
-        this._debug('inviting jicofo');
-        const { focus, room, muc } = this._config;
-        const iq = <iq to = { focus } type="set" xmlns="jabber:client">
+    async _sendConferenceRequestXmpp(toJid) {
+        this._debug('sending conference-request');
+        const { room, muc } = this._config;
+        const iq = <iq to = { toJid } type="set" xmlns="jabber:client">
             <conference machine-uid = { this._machineID }
                 room = { `${room}@${muc}` }
                 xmlns="http://jitsi.org/protocol/focus">
-                    <property name="channelLastN" value="-1"/>
-                    <property name="disableRtx" value="false"/>
-                    <property name="enableTcc" value="true"/>
-                    <property name="enableRemb" value="true"/>
-                    <property name="enableLipSync" value="false"/>
-                    <property name="startBitrate" value="800"/>
-                    <property name="octo" value="true"/>
-                    <property name="openSctp" value="false"/>
-                    <property name="startAudioMuted" value="999"/>
-                    <property name="startVideoMuted" value="999"/>
-                    <property name="stereo" value="true"/>
-                    <property name="useRoomAsSharedDocumentName" value="false"/>
             </conference>
         </iq>;
         try {
@@ -107,14 +95,14 @@ export default class Participant extends EventEmitter {
     }
 
     async _joinMuc() {
-        const { focus, room, muc } = this._config;
+        const { room, muc } = this._config;
         this._debug('joining');
         try {
             await this._xmpp.send(<presence
                 to = { this._mucJID }
                 xmlns="jabber:client">
                     <x xmlns="http://jabber.org/protocol/muc"/>
-                    <stats-id>Adeline-2mY</stats-id>
+                    <stats-id>participant-{this._id}</stats-id>
                     <region id="us-east-1" xmlns="http://jitsi.org/jitsi-meet"/>
                     <c hash="sha-1" node="http://jitsi.org/jitsimeet" ver="cvjWXufsg4xT62Ec2mlATkFZ9lk=" xmlns="http://jabber.org/protocol/caps"/>
                     <jitsi_participant_region>us-east-1</jitsi_participant_region>
