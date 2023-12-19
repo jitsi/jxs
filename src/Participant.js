@@ -2,22 +2,21 @@
 import EventEmitter from 'events';
 import { client, xml } from '@xmpp/client';
 import debug from '@xmpp/debug';
-import { generateSsrc } from './util'
-
-let id = 1;
+import fetch from 'node-fetch';
+import { generateSsrc, log } from './util'
 
 export default class Participant extends EventEmitter {
-    constructor(config = {}) {
+    constructor(id, config = {}) {
         super();
-        this._id = id++;
+        this._id = id;
         this._config = config;
-        const { service, room, domain, enableDebug = false } = this._config;
+        const { service, room, domain, enableXmppLog } = this._config;
         this._xmpp = client({
             service: `${service}?room=${room}`,
             domain
         });
 
-        if (enableDebug) {
+        if (enableXmppLog) {
             debug(this._xmpp, true);
         }
 
@@ -40,29 +39,31 @@ export default class Participant extends EventEmitter {
 
 
     _onError(error) {
-        console.error(`${this} error:`, error);
+        log(`${this} error:`, error);
         this.emit('error', error);
     }
 
     _onOffline() {
-        console.log(`${this} is offline!`);
+        log(`${this} offline`);
         this.emit('offline');
     }
 
     async _onOnline(address) {
-        console.log(`${this} is online!`);
+        this._debug('online');
         this.emit('online', address);
         this._jid = address;
         this._machineID = this._jid.local;
         this._roomNick = this._jid.local.slice(0, 8);
-        const { room, muc } = this._config;
+        const { room, muc, conferenceRequestTarget } = this._config;
         this._mucJID = `${room}@${muc}/${this._roomNick}`;
         try {
-            await this._inviteJicofo();
+            if (!this._getConferenceRequestUrl()) {
+                await this._sendConferenceRequestXmpp(conferenceRequestTarget);
+            }
             await this._joinMuc();
             this._startPing();
         } catch (error) {
-            console.error(`${this} error:`, error);
+            error(`${this} error:`, error);
         }
         this.emit('join-finished');
     }
@@ -72,67 +73,74 @@ export default class Participant extends EventEmitter {
             const x = stanza.getChild("x");
             if (x && x.getChildren("status").find(
                     (status) => status.attrs.code === "110") !== undefined) {
-                this.emit('joined', stanza);
+                log(`${this} joined`);
+                this.emit('joined');
             }
         }
 
         this.emit('stanza', stanza);
     }
 
-    async _inviteJicofo() {
-        console.log(`${this} is inviting jicofo to the room`);
-        const { focus, room, muc } = this._config;
-        const iq = <iq to = { focus } type="set" xmlns="jabber:client">
+    async _sendConferenceRequestXmpp(toJid) {
+        this._debug(`sending conference-request over XMPP to ${toJid}`);
+        const { room, muc } = this._config;
+        const iq = <iq to = { toJid } type="set" xmlns="jabber:client">
             <conference machine-uid = { this._machineID }
                 room = { `${room}@${muc}` }
                 xmlns="http://jitsi.org/protocol/focus">
-                    <property name="channelLastN" value="-1"/>
-                    <property name="disableRtx" value="false"/>
-                    <property name="enableTcc" value="true"/>
-                    <property name="enableRemb" value="true"/>
-                    <property name="enableLipSync" value="false"/>
-                    <property name="startBitrate" value="800"/>
-                    <property name="octo" value="true"/>
-                    <property name="openSctp" value="false"/>
-                    <property name="startAudioMuted" value="999"/>
-                    <property name="startVideoMuted" value="999"/>
-                    <property name="stereo" value="true"/>
-                    <property name="useRoomAsSharedDocumentName" value="false"/>
             </conference>
         </iq>;
         try {
-            await this._xmpp.iqCaller.request(iq, 30000 );
+            await this._xmpp.iqCaller.request(iq, 30000);
         } catch (error) {
-            console.error(error);
+            log(`${this} Error inviting jicofo:`, error)
         }
     }
 
+    async _sendConferenceRequestHttp(url) {
+        const { room, muc } = this._config;
+        const fullRoom = `${room}@${muc}`;
+        this._debug(`${this} sending conference-request to ${url}, fullRoom=${fullRoom}`);
+
+        await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+             'machineUid': this._machineID,
+             'room': fullRoom
+            })
+        })
+           .then(response => response.json())
+           .then(response => this._debug("Response: "+JSON.stringify(response)))
+    }
+
     async _joinMuc() {
-        const { focus, room, muc } = this._config;
-        console.log(`${this} is joining!`);
+        const { room, muc } = this._config;
+        this._debug('joining');
         try {
             await this._xmpp.send(<presence
                 to = { this._mucJID }
                 xmlns="jabber:client">
                     <x xmlns="http://jabber.org/protocol/muc"/>
-                    <stats-id>Adeline-2mY</stats-id>
+                    <stats-id>participant-{this._id}</stats-id>
                     <region id="us-east-1" xmlns="http://jitsi.org/jitsi-meet"/>
-                    <c hash="sha-1" node="http://jitsi.org/jitsimeet" ver="cvjWXufsg4xT62Ec2mlATkFZ9lk=" xmlns="http://jabber.org/protocol/caps"/>
+                    <c xmlns="http://jabber.org/protocol/caps" hash="sha-1" node="https://jitsi.org/jitsi-meet" ver="145G7HAtbAUYSkQzy4VtpQNqU3o="/>
                     <jitsi_participant_region>us-east-1</jitsi_participant_region>
                     <avatar-id>e8b7ee7bbac3a53f14a711b538526bf3</avatar-id>
-                    <nick xmlns="http://jabber.org/protocol/nick"/>
+                    <nick xmlns="http://jabber.org/protocol/nick">this._id</nick>
                     <audiomuted xmlns="http://jitsi.org/jitmeet/audio">false</audiomuted>
                     <videoType xmlns="http://jitsi.org/jitmeet/video">camera</videoType>
                     <videomuted xmlns="http://jitsi.org/jitmeet/video">false</videomuted>
                 </presence>);
         } catch (error) {
-            console.error()
-
+            log(`${this} Error joining MUC:`, error);
         }
     }
 
     async _sendAudioMute(mute) {
-        console.log(`${this} send mute ${mute}!`);
+        this._debug(`sending mute ${mute}`);
         try {
             await this._xmpp.send(<presence
                 to = { this._mucJID }
@@ -148,11 +156,11 @@ export default class Participant extends EventEmitter {
                     <videomuted xmlns="http://jitsi.org/jitmeet/video">false</videomuted>
                 </presence>);
         } catch (error) {
-            console.error()
+            log(`${this} Error sending audio mute:`, error);
         }
     }
     async _sendMessage(txt) {
-        console.log(`${this} send msg ${txt}!`);
+        this._debug(`sending message: ${txt}`);
         try {
             await this._xmpp.send(<message
                 to = { this._mucJID }
@@ -161,12 +169,12 @@ export default class Participant extends EventEmitter {
                 <body>{txt}</body>
                 </message>);
         } catch (error) {
-            console.error()
+            log(`${this} Error sending message:`, error);
         }
     }
 
     toString() {
-        return `Participant ${this._id} from ${this._config.room} room: `;
+        return `Participant[id=${this._id}]`;
     }
 
     _sendSessionAccept(jingle, iq) {
@@ -279,11 +287,11 @@ export default class Participant extends EventEmitter {
             </jingle>
         </iq>;
 
-        try{
-            console.log(`${this} sends session accept`);
+        try {
+            this._debug('sending session-accept');
             this._xmpp.iqCaller.request(sessionAccept, 30000);
         } catch (error) {
-            console.error(error);
+            log(`${this} Error sending session-accept:`, error);
         }
     }
 
@@ -291,7 +299,7 @@ export default class Participant extends EventEmitter {
         const { element, stanza } = ctx;
         switch(element.attrs.action) {
             case 'session-initiate':
-                console.log(`${this} received session initiate`);
+                this._debug('received session-initiate');
                 setTimeout(async () => {
                     this._sendSessionAccept(element, stanza);
                 }, 10);
@@ -302,8 +310,27 @@ export default class Participant extends EventEmitter {
         }
     }
 
-    join() {
+    _debug(args) {
+        if (this._config.enableDebug) {
+            log(this, " ", args);
+        }
+    }
+
+    async join() {
+        const url = this._getConferenceRequestUrl();
+        if (url) {
+            await this._sendConferenceRequestHttp(url);
+        }
+
         this._xmpp.start().catch(this._onError);
+    }
+
+    _getConferenceRequestUrl() {
+        const { conferenceRequestTarget, room } = this._config;
+
+        if (conferenceRequestTarget.startsWith('http://') || conferenceRequestTarget.startsWith('https://')) {
+            return `${conferenceRequestTarget}?room=${room}`;
+        }
     }
 
     _startPing() {
@@ -321,7 +348,7 @@ export default class Participant extends EventEmitter {
                 this._xmpp.streamManagement.inbound += 1;
             });
         } catch(error) {
-            console.error(error);
+            log(`${this} Error sending ping:`, error);
         }
     }
 
@@ -330,18 +357,18 @@ export default class Participant extends EventEmitter {
     }
 
     async disconnect() {
-        console.log(`${this} is disconnecting`);
+        this._debug('disconnecting');
         this._stopPing();
         try {
             await this._xmpp.send(<presence from = { this._jid } to={ this._mucJID } type = 'unavailable'/>);
             await this._xmpp.send(<presence type = "unavailable" />);
         } catch (error) {
-            console.error(error);
+            log(`${this} Error sending presence unavailable:`, error);
         }
         try {
             await this._xmpp.stop();
         } catch(error) {
-            console.error(error);
+            log(`${this} Error stopping xmpp:`, error);
         }
     }
 

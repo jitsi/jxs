@@ -11,6 +11,7 @@
     "@xmpp/client": "^0.13.1",
     "@xmpp/debug": "^0.13.0",
     "bufferutil": "^4.0.8",
+    "node-fetch": "^3.3.2",
     "utf-8-validate": "^6.0.3",
     "ws": "^8.15.1"
   },

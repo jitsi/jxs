@@ -1,4 +1,3 @@
 {
-    "service": "wss://example.com/xmpp-websocket",
     "domain": "example.com"
 }
