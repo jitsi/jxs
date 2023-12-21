@@ -31,6 +31,7 @@ config.delay = config.delay || 0;
 config.enableDebug = config.enableDebug || false;
 config.enableXmppLog = config.enableXmppLog || false;
 config.conferenceRequestTarget = config.conferenceRequestTarget || `focus.${config.domain}`;
+config.joinMuc === undefined && (config.joinMuc = true);
 log(`Running with config: ${JSON.stringify(config,null, 2)}`);
 
 const rooms = {};

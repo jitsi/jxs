@@ -60,7 +60,11 @@ export default class Participant extends EventEmitter {
             if (!this._getConferenceRequestUrl()) {
                 await this._sendConferenceRequestXmpp(conferenceRequestTarget);
             }
-            await this._joinMuc();
+            if (this._config.joinMuc) {
+                await this._joinMuc();
+            } else {
+                this._debug('Will not join MUC');
+            }
             this._startPing();
         } catch (error) {
             error(`${this} error:`, error);
