@@ -12,7 +12,7 @@ const { config } = loadConfig({
 config.roomPrefix = config.roomPrefix || 'jxs-test-' + randomInt(0, 10000);
 config.conferenceRequestTarget = config.conferenceRequestTarget || `focus.${config.domain}`;
 
-log(`Running with config: ${JSON.stringify(config, null, 2)}`);
+log(`Starting with config:\n${JSON.stringify(config, null, 2)}`);
 
 const rooms = {};
 let numberOfJoins = 0;
@@ -21,9 +21,9 @@ const startTime = new Date();
 const onJoined = function () {
     numberOfJoins++;
     if (numberOfJoins === config.numberOfParticipants * config.numberOfRooms) {
-        log(`All joined, took ${(new Date() - startTime) / 1000} seconds.`);
+        log(`All participants joined in ${(new Date() - startTime) / 1000} seconds.`);
         if (config.duration) {
-            log(`Setting timeout in ${config.duration} seconds.`);
+            log(`Will disconnect in ${config.duration} seconds.`);
             setTimeout(cleanup, config.duration * 1000);
         }
     }
@@ -33,7 +33,7 @@ let numberOfOffline = 0;
 const onOffline = function () {
     numberOfOffline++;
     if (numberOfOffline === config.numberOfParticipants * config.numberOfRooms) {
-        log('All offline, exiting.');
+        log('All participants offline. Exiting.');
         process.exit(0);
     }
 };

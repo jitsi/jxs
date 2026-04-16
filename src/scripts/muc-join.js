@@ -4,38 +4,52 @@ import { joinMuc, leaveMuc } from '../lib/muc';
 import { log } from '../util';
 
 const { config } = loadConfig({
-    // script-specific defaults
-    mucResource: 'jxs-muc-join',
+    appendRoomToService: true,
 });
 
-const { domain, service, mucJid, mucResource, muc } = config;
+const { domain, mucJid } = config;
 
 if (!mucJid) {
-    console.error('No mucJid specified (set in config.json or pass --muc-jid)');
+    console.error('No MUC JID specified. Set "mucJid" in config.json or pass --muc-jid.');
     process.exit(1);
 }
 
-const fullMucJid = `${mucJid}/${mucResource}`;
+const resolvedMucJid = mucJid.includes('@') ? mucJid : `${mucJid}@${config.muc}`;
 
-log(`Connecting to ${service} (domain: ${domain})`);
+const serviceUrl = new URL(config.service);
+if (config.appendRoomToService) {
+    serviceUrl.searchParams.set('room', resolvedMucJid.split('@')[0]);
+}
+if (config.jwt) {
+    serviceUrl.searchParams.set('token', config.jwt);
+}
+config.service = serviceUrl.toString();
+
+const logUrl = new URL(config.service);
+if (logUrl.searchParams.has('token')) logUrl.searchParams.set('token', '<redacted>');
+log(`Connecting to ${logUrl} (domain: ${domain}).`);
 
 let xmpp;
+let fullMucJid;
 
 async function main() {
     ({ xmpp } = await connect(config));
-    log(`Connected as ${xmpp.jid || '(unknown)'}`);
+    log(`Connected as ${xmpp.jid}.`);
 
-    log(`Joining MUC: ${fullMucJid}`);
+    const resource = config.mucResource || xmpp.jid.local.slice(0, 8);
+    fullMucJid = `${resolvedMucJid}/${resource}`;
+
+    log(`Joining MUC: ${fullMucJid}.`);
     const { joinedAt } = await joinMuc(xmpp, fullMucJid);
-    log(`Joined MUC at ${joinedAt.toISOString()}`);
+    log(`Joined MUC at ${joinedAt.toISOString()}.`);
 }
 
 async function cleanup() {
     if (!xmpp) return;
-    log('Leaving MUC and disconnecting...');
-    try { await leaveMuc(xmpp, fullMucJid); } catch (_) {}
+    log('Leaving MUC and disconnecting.');
+    try { if (fullMucJid) await leaveMuc(xmpp, fullMucJid); } catch (_) {}
     await disconnect(xmpp);
-    log('Done.');
+    log('Disconnected.');
     process.exit(0);
 }
 
@@ -43,6 +57,6 @@ process.on('SIGINT', cleanup);
 process.on('SIGTERM', cleanup);
 
 main().catch((err) => {
-    console.error('Fatal:', err);
+    console.error('Fatal error:', err);
     process.exit(1);
 });

@@ -1,5 +1,3 @@
-import { randomInt } from '../util';
-
 /**
  * Parse --key=value and --key value CLI flags into an object.
  * Keys are camelCased (--muc-jid → mucJid).
@@ -32,9 +30,28 @@ function parseCliFlags(argv) {
 }
 
 /**
+ * Read JXS_* environment variables and return them as a camelCase config object.
+ * JXS_MUC_JID → mucJid, JXS_JWT → jwt, etc.
+ */
+function parseEnvVars() {
+    const result = {};
+    for (const [key, value] of Object.entries(process.env)) {
+        if (!key.startsWith('JXS_')) continue;
+        // JXS_MUC_JID → muc_jid → mucJid
+        const camel = key.slice(4).toLowerCase().replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+        let coerced = value;
+        if (value === 'true') coerced = true;
+        else if (value === 'false') coerced = false;
+        else if (!isNaN(value) && value !== '') coerced = Number(value);
+        result[camel] = coerced;
+    }
+    return result;
+}
+
+/**
  * Load config for a script. Call with the script-specific defaults.
  *
- * Resolution order: scriptDefaults < config.json < CLI flags.
+ * Resolution order: scriptDefaults < config.json < env vars (JXS_*) < CLI flags.
  *
  * The first non-flag positional argument after argv[1] is the config file path.
  * Remaining positional arguments are returned as `positional`.
@@ -51,6 +68,7 @@ export function loadConfig(scriptDefaults = {}) {
     }
     const flagArgs = flagStart === -1 ? [] : args.slice(flagStart);
     const cliOverrides = parseCliFlags(flagArgs);
+    const envVars = parseEnvVars();
 
     const fs = require('fs');
     const path = require('path');
@@ -59,20 +77,32 @@ export function loadConfig(scriptDefaults = {}) {
         try {
             fileConfig = JSON.parse(fs.readFileSync(path.resolve(positional[0])));
         } catch (err) {
-            console.error(`Error reading config file (${positional[0]}): ${err.message}`);
+            console.error(`Failed to read config file "${positional[0]}": ${err.message}`);
             process.exit(1);
         }
     }
 
-    const merged = { ...scriptDefaults, ...fileConfig, ...cliOverrides };
+    const merged = { ...scriptDefaults, ...fileConfig, ...envVars, ...cliOverrides };
 
     // Global derived defaults
     if (!merged.domain) {
-        console.error('No domain specified (set in config.json or pass --domain)');
+        console.error('No domain specified. Set "domain" in config.json or pass --domain.');
         process.exit(1);
     }
-    merged.service = merged.service || `wss://${merged.domain}/xmpp-websocket`;
-    merged.muc = merged.muc || `conference.${merged.domain}`;
+    // Derive service and muc from domain+tenant unless explicitly set in config/env/CLI.
+    // scriptDefaults don't count as explicit — tenant should always override them.
+    const explicitService = fileConfig.service || envVars.service || cliOverrides.service;
+    const explicitMuc = fileConfig.muc || envVars.muc || cliOverrides.muc;
+    if (!explicitService) {
+        merged.service = merged.tenant
+            ? `wss://${merged.domain}/${merged.tenant}/xmpp-websocket`
+            : `wss://${merged.domain}/xmpp-websocket`;
+    }
+    if (!explicitMuc) {
+        merged.muc = merged.tenant
+            ? `conference.${merged.tenant}.${merged.domain}`
+            : `conference.${merged.domain}`;
+    }
     merged.enableDebug = merged.enableDebug || false;
     merged.enableXmppLog = merged.enableXmppLog || false;
 

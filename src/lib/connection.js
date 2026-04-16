@@ -1,5 +1,9 @@
 import { client } from '@xmpp/client';
-import debug from '@xmpp/debug';
+
+function redact(value) {
+    if (typeof value !== 'string') return value;
+    return value.replace(/([?&]token=)[^&\s]+/g, '$1<redacted>');
+}
 
 /**
  * Connect to XMPP and resolve with the xmpp client instance and assigned JID.
@@ -16,7 +20,9 @@ export function connect(config) {
     const xmpp = client({ service, domain });
 
     if (enableXmppLog) {
-        debug(xmpp, true);
+        xmpp.on('status', (status, value) => console.debug('status', status, redact(value) ?? ''));
+        xmpp.on('input', input => console.debug('<<<', input));
+        xmpp.on('output', output => console.debug('>>>', output));
     }
 
     return new Promise((resolve, reject) => {
