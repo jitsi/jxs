@@ -6,8 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 npm install          # install deps
-npm run build        # webpack → dist/main.js
-node dist/main.js config.json [rooms] [participants]  # run
+npm run build        # webpack → dist/stress-test.js, dist/muc-join.js
+node dist/stress-test.js config.json [rooms] [participants]
+node dist/muc-join.js config.json --muc-jid=<room>
 ```
 
 No test suite. No linter configured.
