@@ -1,3 +1,10 @@
+function coerce(value) {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    if (value !== true && value !== '' && !isNaN(value)) return Number(value);
+    return value;
+}
+
 /**
  * Parse --key=value and --key value CLI flags into an object.
  * Keys are camelCased (--muc-jid → mucJid).
@@ -18,13 +25,8 @@ function parseCliFlags(argv) {
             value = argv[i + 1] && !argv[i + 1].startsWith('--') ? argv[++i] : true;
         }
 
-        // kebab-case → camelCase
         const camel = key.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
-        // coerce booleans and numbers
-        if (value === 'true') value = true;
-        else if (value === 'false') value = false;
-        else if (value !== true && !isNaN(value)) value = Number(value);
-        result[camel] = value;
+        result[camel] = coerce(value);
     }
     return result;
 }
@@ -39,11 +41,7 @@ function parseEnvVars() {
         if (!key.startsWith('JXS_')) continue;
         // JXS_MUC_JID → muc_jid → mucJid
         const camel = key.slice(4).toLowerCase().replace(/_([a-z])/g, (_, c) => c.toUpperCase());
-        let coerced = value;
-        if (value === 'true') coerced = true;
-        else if (value === 'false') coerced = false;
-        else if (!isNaN(value) && value !== '') coerced = Number(value);
-        result[camel] = coerced;
+        result[camel] = coerce(value);
     }
     return result;
 }
