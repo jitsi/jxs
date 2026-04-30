@@ -6,7 +6,6 @@ const { config } = loadConfig({
     numberOfRooms: 1,
     numberOfParticipants: 2,
     delay: 0,
-    joinMuc: true,
 });
 
 config.roomPrefix = config.roomPrefix || 'jxs-test-' + randomInt(0, 10000);

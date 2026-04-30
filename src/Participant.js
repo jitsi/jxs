@@ -24,7 +24,7 @@ export default class Participant extends EventEmitter {
     }
 
     async join() {
-        const { service, domain, room, muc, conferenceRequestTarget, joinMuc: shouldJoinMuc } = this._config;
+        const { service, domain, room, muc, conferenceRequestTarget } = this._config;
 
         try {
             const url = this._getConferenceRequestUrl();
@@ -60,13 +60,9 @@ export default class Participant extends EventEmitter {
                 await this._sendConferenceRequestXmpp(conferenceRequestTarget);
             }
 
-            if (shouldJoinMuc !== false) {
-                await joinMuc(xmpp, this._mucJID, { presenceChildren: this._buildPresenceChildren() });
-                log(`${this}: joined.`);
-                this.emit('joined');
-            } else {
-                this._debug('MUC join skipped.');
-            }
+            await joinMuc(xmpp, this._mucJID, { presenceChildren: this._buildPresenceChildren() });
+            log(`${this}: joined.`);
+            this.emit('joined');
 
             this._startPing();
             this.emit('join-finished');
