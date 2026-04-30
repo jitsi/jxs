@@ -20,6 +20,8 @@ export function connect(config) {
     const xmpp = client({ service, domain });
 
     if (enableXmppLog) {
+        // Replicate @xmpp/debug behaviour but redact ?token= from URLs in status events
+        // to avoid leaking JWTs in logs.
         xmpp.on('status', (status, value) => console.debug('status', status, redact(value) ?? ''));
         xmpp.on('input', input => console.debug('<<<', input));
         xmpp.on('output', output => console.debug('>>>', output));

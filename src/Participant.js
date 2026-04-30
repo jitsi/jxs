@@ -26,49 +26,54 @@ export default class Participant extends EventEmitter {
     async join() {
         const { service, domain, room, muc, conferenceRequestTarget, joinMuc: shouldJoinMuc } = this._config;
 
-        const url = this._getConferenceRequestUrl();
-        if (url) {
-            await this._sendConferenceRequestHttp(url);
-        }
+        try {
+            const url = this._getConferenceRequestUrl();
+            if (url) {
+                await this._sendConferenceRequestHttp(url);
+            }
 
-        const { xmpp, jid } = await connect({
-            service: `${service}?room=${room}`,
-            domain,
-            enableXmppLog: this._config.enableXmppLog
-        });
-        this._xmpp = xmpp;
-        this._jid = jid;
-        this._machineID = jid.local;
-        this._mucJID = `${room}@${muc}/${jid.local.slice(0, 8)}`;
+            const { xmpp, jid } = await connect({
+                service: `${service}?room=${room}`,
+                domain,
+                enableXmppLog: this._config.enableXmppLog
+            });
+            this._xmpp = xmpp;
+            this._jid = jid;
+            this._machineID = jid.local;
+            this._mucJID = `${room}@${muc}/${jid.local.slice(0, 8)}`;
 
-        this._debug('Online.');
-        this.emit('online', jid);
+            this._debug('Online.');
+            this.emit('online', jid);
 
-        xmpp.on('error', (err) => {
-            log(`${this}: error: ${err}`);
+            xmpp.on('error', (err) => {
+                log(`${this}: error: ${err}`);
+                this.emit('error', err);
+            });
+            xmpp.on('offline', () => {
+                log(`${this}: offline.`);
+                this.emit('offline');
+            });
+            xmpp.on('stanza', (stanza) => this.emit('stanza', stanza));
+            xmpp.iqCallee.set('urn:xmpp:jingle:1', 'jingle', this._onJingle.bind(this));
+
+            if (!url) {
+                await this._sendConferenceRequestXmpp(conferenceRequestTarget);
+            }
+
+            if (shouldJoinMuc !== false) {
+                await joinMuc(xmpp, this._mucJID, { presenceChildren: this._buildPresenceChildren() });
+                log(`${this}: joined.`);
+                this.emit('joined');
+            } else {
+                this._debug('MUC join skipped.');
+            }
+
+            this._startPing();
+            this.emit('join-finished');
+        } catch (err) {
+            log(`${this}: failed to join: ${err}`);
             this.emit('error', err);
-        });
-        xmpp.on('offline', () => {
-            log(`${this}: offline.`);
-            this.emit('offline');
-        });
-        xmpp.on('stanza', (stanza) => this.emit('stanza', stanza));
-        xmpp.iqCallee.set('urn:xmpp:jingle:1', 'jingle', this._onJingle.bind(this));
-
-        if (!url) {
-            await this._sendConferenceRequestXmpp(conferenceRequestTarget);
         }
-
-        if (shouldJoinMuc !== false) {
-            await joinMuc(xmpp, this._mucJID, { presenceChildren: this._buildPresenceChildren() });
-            log(`${this}: joined.`);
-            this.emit('joined');
-        } else {
-            this._debug('MUC join skipped.');
-        }
-
-        this._startPing();
-        this.emit('join-finished');
     }
 
     _buildPresenceChildren() {
