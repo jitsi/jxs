@@ -47,7 +47,13 @@ async function main() {
 async function cleanup() {
     if (!xmpp) return;
     log('Leaving MUC and disconnecting.');
-    try { if (fullMucJid) await leaveMuc(xmpp, fullMucJid); } catch (_) {}
+    try { 
+        if (fullMucJid) {
+            await leaveMuc(xmpp, fullMucJid);
+        }
+    } catch (error) {
+        console.error(`Error while leaging room ${resolvedMucJid}: `, error);
+    }
     await disconnect(xmpp);
     log('Disconnected.');
     process.exit(0);
