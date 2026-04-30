@@ -100,8 +100,8 @@ export default class Participant extends EventEmitter {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ machineUid: this._machineID, room: fullRoom })
         })
-            .then(r => r.json())
-            .then(r => this._debug(`Conference request response: ${JSON.stringify(r)}.`));
+            .then(response => response.json())
+            .then(response => this._debug(`Conference request response: ${JSON.stringify(response)}.`));
     }
 
     async _sendAudioMute(mute) {
@@ -140,7 +140,14 @@ export default class Participant extends EventEmitter {
     _sendSessionAccept(jingle, iq) {
         const ssrc = {
             audio: generateSsrc(),
-            video: Array.from({ length: 6 }, generateSsrc)
+            video: [
+                generateSsrc(),
+                generateSsrc(),
+                generateSsrc(),
+                generateSsrc(),
+                generateSsrc(),
+                generateSsrc()
+            ]
         };
         const sessionAccept = <iq to={iq.attrs.from} type="set" xmlns="jabber:client">
             <jingle
@@ -188,10 +195,30 @@ export default class Participant extends EventEmitter {
                         <payload-type channels="1" clockrate="90000" id="96" name="rtx">
                             <parameter name="apt" value="100"/>
                         </payload-type>
-                        {ssrc.video.map((s, i) => <source ssrc={s} xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
+                        <source ssrc={ ssrc.video[0] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
                             <parameter name="cname" value={`cname-${this._id}`}/>
                             <parameter name="msid" value={`video-stream-${this._id} video-track-${this._id}`}/>
-                        </source>)}
+                        </source>
+                        <source ssrc={ ssrc.video[1] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
+                            <parameter name="cname" value={ `cname-${this._id}` }/>
+                            <parameter name="msid" value={ `video-stream-${this._id} video-track-${this._id}` }/>
+                        </source>
+                        <source ssrc={ ssrc.video[2] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
+                            <parameter name="cname" value={ `cname-${this._id}` }/>
+                            <parameter name="msid" value={ `video-stream-${this._id} video-track-${this._id}` }/>
+                        </source>
+                        <source ssrc={ ssrc.video[3] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
+                            <parameter name="cname" value={ `cname-${this._id}` }/>
+                            <parameter name="msid" value={ `video-stream-${this._id} video-track-${this._id}` }/>
+                        </source>
+                        <source ssrc={ ssrc.video[4] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
+                            <parameter name="cname" value={ `cname-${this._id}` }/>
+                            <parameter name="msid" value={ `video-stream-${this._id} video-track-${this._id}` }/>
+                        </source>
+                        <source ssrc={ ssrc.video[5] } xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
+                            <parameter name="cname" value={ `cname-${this._id}` }/>
+                            <parameter name="msid" value={ `video-stream-${this._id} video-track-${this._id}` }/>
+                        </source>
                         <ssrc-group semantics="FID" xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
                             <source ssrc={ssrc.video[0]}/><source ssrc={ssrc.video[1]}/>
                         </ssrc-group>
