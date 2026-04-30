@@ -49,7 +49,7 @@ export function connect(config) {
 export async function disconnect(xmpp) {
     try {
         await xmpp.stop();
-    } catch (_) {
-        // ignore stop errors
+    } catch (err) {
+        console.error('Error while stopping XMPP client:', err);
     }
 }

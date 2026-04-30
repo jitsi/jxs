@@ -88,6 +88,7 @@ export default class Participant extends EventEmitter {
 
     async _sendConferenceRequestXmpp(_toJid) {
         // XMPP conference-request not yet implemented
+        log(`${this}: warning: XMPP conference-request is not implemented, skipping.`);
     }
 
     async _sendConferenceRequestHttp(url) {
@@ -108,6 +109,12 @@ export default class Participant extends EventEmitter {
         this._debug(`Sending audio mute: ${mute}.`);
         try {
             await this._xmpp.send(<presence to={this._mucJID} xmlns="jabber:client">
+                <stats-id>participant-{this._id}</stats-id>
+                <region id="us-east-1" xmlns="http://jitsi.org/jitsi-meet"/>
+                <c hash="sha-1" node="https://jitsi.org/jitsi-meet" ver="145G7HAtbAUYSkQzy4VtpQNqU3o=" xmlns="http://jabber.org/protocol/caps"/>
+                <jitsi_participant_region>us-east-1</jitsi_participant_region>
+                <avatar-id>e8b7ee7bbac3a53f14a711b538526bf3</avatar-id>
+                <nick xmlns="http://jabber.org/protocol/nick">{this._id}</nick>
                 <audiomuted xmlns="http://jitsi.org/jitmeet/audio">{mute}</audiomuted>
                 <videoType xmlns="http://jitsi.org/jitmeet/video">camera</videoType>
                 <videomuted xmlns="http://jitsi.org/jitmeet/video">false</videomuted>
@@ -220,16 +227,21 @@ export default class Participant extends EventEmitter {
                             <parameter name="msid" value={ `video-stream-${this._id} video-track-${this._id}` }/>
                         </source>
                         <ssrc-group semantics="FID" xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
-                            <source ssrc={ssrc.video[0]}/><source ssrc={ssrc.video[1]}/>
+                            <source ssrc={ssrc.video[0]}/>
+                            <source ssrc={ssrc.video[1]}/>
                         </ssrc-group>
                         <ssrc-group semantics="FID" xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
-                            <source ssrc={ssrc.video[2]}/><source ssrc={ssrc.video[4]}/>
+                            <source ssrc={ssrc.video[2]}/>
+                            <source ssrc={ssrc.video[4]}/>
                         </ssrc-group>
                         <ssrc-group semantics="FID" xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
-                            <source ssrc={ssrc.video[3]}/><source ssrc={ssrc.video[5]}/>
+                            <source ssrc={ssrc.video[3]}/>
+                            <source ssrc={ssrc.video[5]}/>
                         </ssrc-group>
                         <ssrc-group semantics="SIM" xmlns="urn:xmpp:jingle:apps:rtp:ssma:0">
-                            <source ssrc={ssrc.video[0]}/><source ssrc={ssrc.video[2]}/><source ssrc={ssrc.video[3]}/>
+                            <source ssrc={ssrc.video[0]}/>
+                            <source ssrc={ssrc.video[2]}/>
+                            <source ssrc={ssrc.video[3]}/>
                         </ssrc-group>
                         <rtcp-mux/>
                         <rtp-hdrext id="3" uri="http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time" xmlns="urn:xmpp:jingle:apps:rtp:rtp-hdrext:0"/>
