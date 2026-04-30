@@ -87,16 +87,12 @@ export function loadConfig(scriptDefaults = {}) {
         console.error('No domain specified. Set "domain" in config.json or pass --domain.');
         process.exit(1);
     }
-    // Derive service and muc from domain+tenant unless explicitly set in config/env/CLI.
-    // scriptDefaults don't count as explicit — tenant should always override them.
-    const explicitService = fileConfig.service || envVars.service || cliOverrides.service;
-    const explicitMuc = fileConfig.muc || envVars.muc || cliOverrides.muc;
-    if (!explicitService) {
+    if (!merged.service) {
         merged.service = merged.tenant
             ? `wss://${merged.domain}/${merged.tenant}/xmpp-websocket`
             : `wss://${merged.domain}/xmpp-websocket`;
     }
-    if (!explicitMuc) {
+    if (!merged.muc) {
         merged.muc = merged.tenant
             ? `conference.${merged.tenant}.${merged.domain}`
             : `conference.${merged.domain}`;
