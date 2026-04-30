@@ -23,9 +23,9 @@ if (config.appendRoomToService) {
 if (config.jwt) {
     serviceUrl.searchParams.set('token', config.jwt);
 }
-config.service = serviceUrl.toString();
+const service = serviceUrl.toString();
 
-const logUrl = new URL(config.service);
+const logUrl = new URL(service);
 if (logUrl.searchParams.has('token')) logUrl.searchParams.set('token', '<redacted>');
 log(`Connecting to ${logUrl} (domain: ${domain}).`);
 
@@ -33,7 +33,7 @@ let xmpp;
 let fullMucJid;
 
 async function main() {
-    ({ xmpp } = await connect(config));
+    ({ xmpp } = await connect({ ...config, service }));
     log(`Connected as ${xmpp.jid}.`);
 
     const resource = config.mucResource || xmpp.jid.local.slice(0, 8);
@@ -47,12 +47,12 @@ async function main() {
 async function cleanup() {
     if (!xmpp) return;
     log('Leaving MUC and disconnecting.');
-    try { 
+    try {
         if (fullMucJid) {
             await leaveMuc(xmpp, fullMucJid);
         }
     } catch (error) {
-        console.error(`Error while leaging room ${resolvedMucJid}: `, error);
+        console.error(`Error while leaving room ${resolvedMucJid}:`, error);
     }
     await disconnect(xmpp);
     log('Disconnected.');

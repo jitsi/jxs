@@ -10,7 +10,6 @@ const { config } = loadConfig({
 });
 
 config.roomPrefix = config.roomPrefix || 'jxs-test-' + randomInt(0, 10000);
-config.conferenceRequestTarget = config.conferenceRequestTarget || `focus.${config.domain}`;
 
 log(`Starting with config:\n${JSON.stringify(config, null, 2)}`);
 

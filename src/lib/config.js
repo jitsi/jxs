@@ -97,6 +97,7 @@ export function loadConfig(scriptDefaults = {}) {
             ? `conference.${merged.tenant}.${merged.domain}`
             : `conference.${merged.domain}`;
     }
+    merged.conferenceRequestTarget = merged.conferenceRequestTarget || `focus.${merged.domain}`;
     merged.enableDebug = merged.enableDebug || false;
     merged.enableXmppLog = merged.enableXmppLog || false;
 
