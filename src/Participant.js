@@ -99,7 +99,10 @@ export default class Participant extends EventEmitter {
         await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ machineUid: this._machineID, room: fullRoom })
+            body: JSON.stringify({ 
+                machineUid: this._machineID, 
+                room: fullRoom
+            })
         })
             .then(response => response.json())
             .then(response => this._debug(`Conference request response: ${JSON.stringify(response)}.`));
