@@ -21,5 +21,5 @@ if [ -z $SSH_USERNAME ]; then
 fi
 
 npm run build
-scp -F $SSH_CONFIG_PATH dist/main.js $SSH_USERNAME@$HOST:~/
-ssh -F $SSH_CONFIG_PATH $SSH_USERNAME@$HOST "node ./main.js ./config.json $NUM_CONFERENCES $NUM_PARTICIPANTS"
+scp -F $SSH_CONFIG_PATH dist/stress-test.js $SSH_USERNAME@$HOST:~/
+ssh -F $SSH_CONFIG_PATH $SSH_USERNAME@$HOST "node ./stress-test.js ./config.json $NUM_CONFERENCES $NUM_PARTICIPANTS"

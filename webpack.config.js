@@ -2,15 +2,18 @@ const path = require('path');
 
 module.exports = {
     mode: 'production',
-    entry: './src/index.js',
     target: 'node',
+    entry: {
+        'stress-test': './src/scripts/stress-test.js',
+        'muc-join': './src/scripts/muc-join.js',
+    },
     module: {
         rules: [
-            { test: /\.js$/, exclude: /node_modules/, loader: "babel-loader" }
+            { test: /\.js$/, exclude: /node_modules/, loader: 'babel-loader' }
         ]
     },
     output: {
-        filename: 'main.js',
+        filename: '[name].js',
         path: path.resolve(__dirname, 'dist'),
     },
 };

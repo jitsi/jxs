@@ -25,7 +25,8 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node dist/main.js",
+    "start": "node dist/stress-test.js",
+    "muc-join": "node dist/muc-join.js",
     "build": "webpack"
   },
   "author": "Hristo Terezov",
