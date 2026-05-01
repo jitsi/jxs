@@ -86,9 +86,20 @@ export default class Participant extends EventEmitter {
         ];
     }
 
-    async _sendConferenceRequestXmpp(_toJid) {
-        // XMPP conference-request not yet implemented
-        log(`${this}: warning: XMPP conference-request is not implemented, skipping.`);
+    async _sendConferenceRequestXmpp(toJid) {
+        this._debug(`Sending conference request over XMPP to ${toJid}.`);
+        const { room, muc } = this._config;
+        const iq = <iq to={toJid} type="set" xmlns="jabber:client">
+            <conference machine-uid={this._machineID}
+                room={`${room}@${muc}`}
+                xmlns="http://jitsi.org/protocol/focus">
+            </conference>
+        </iq>;
+        try {
+            await this._xmpp.iqCaller.request(iq, 30000);
+        } catch (err) {
+            log(`${this}: failed to send conference request over XMPP: ${err}`);
+        }
     }
 
     async _sendConferenceRequestHttp(url) {
