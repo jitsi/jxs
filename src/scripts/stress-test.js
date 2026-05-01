@@ -8,7 +8,7 @@ const { config } = loadConfig({
     delay: 0,
 });
 
-config.roomPrefix = config.roomPrefix || 'jxs-test-' + randomInt(0, 10000);
+const roomPrefix = config.roomPrefix || 'jxs-test-' + randomInt(0, 10000);
 
 log(`Starting with config:\n${JSON.stringify(config, null, 2)}`);
 
@@ -37,7 +37,7 @@ const onOffline = function () {
 };
 
 for (let j = 0; j < config.numberOfRooms; j++) {
-    const roomName = `${config.roomPrefix}-${j}`;
+    const roomName = `${roomPrefix}-${j}`;
     const participantConfig = { ...config, room: roomName };
 
     rooms[roomName] = [];
