@@ -43,6 +43,7 @@ No test suite. No linter configured.
 | `delay` | ms between participant joins |
 | `conferenceRequestTarget` | `"http"` or `"xmpp"` |
 | `disableJoinMuc` | skip MUC join (test without conference) |
+| `skipConferenceRequest` | join MUC without sending conference-request to jicofo |
 | `duration` | how long participants stay (seconds) |
 | `enableDebug` / `enableXmppLog` | verbose logging |
 
