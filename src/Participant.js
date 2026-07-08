@@ -24,10 +24,10 @@ export default class Participant extends EventEmitter {
     }
 
     async join() {
-        const { service, domain, room, muc, conferenceRequestTarget } = this._config;
+        const { service, domain, room, muc, conferenceRequestTarget, skipConferenceRequest } = this._config;
 
         try {
-            const url = this._getConferenceRequestUrl();
+            const url = skipConferenceRequest ? undefined : this._getConferenceRequestUrl();
             if (url) {
                 await this._sendConferenceRequestHttp(url);
             }
@@ -56,7 +56,7 @@ export default class Participant extends EventEmitter {
             xmpp.on('stanza', (stanza) => this.emit('stanza', stanza));
             xmpp.iqCallee.set('urn:xmpp:jingle:1', 'jingle', this._onJingle.bind(this));
 
-            if (!url) {
+            if (!url && !skipConferenceRequest) {
                 await this._sendConferenceRequestXmpp(conferenceRequestTarget);
             }
 
